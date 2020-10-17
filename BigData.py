@@ -22,8 +22,7 @@ length = 10
 
 
 def chunk_processing(chunk):
-
-    # Processes chunks of the Domain file so as to reduce memory usage
+    ''' Processes chunks of the Domain file so as to reduce memory usage'''
 
     chunk.drop_duplicates(inplace=True)
 
@@ -37,8 +36,7 @@ def chunk_processing(chunk):
 
 
 def clean_domain_df(domain_file, domain_file_basename, domain_folder):
-
-    # This function cleans the domain file, saving a CSV and returning a dataframe.
+    '''This function cleans the domain file, saving a CSV and returning a dataframe.'''
 
     domain_df = pd.DataFrame()
 
@@ -58,8 +56,7 @@ def clean_domain_df(domain_file, domain_file_basename, domain_folder):
 
 
 def get_non_matches(domain_df, pattern_file):
-
-    # This Function returns a Dataframes with all unmatched elements in the Pattern file
+    '''This Function returns a Dataframes with all unmatched elements in the Pattern file'''
 
     pattern_df = pd.DataFrame()
 
@@ -80,24 +77,23 @@ def get_non_matches(domain_df, pattern_file):
 
 
 def merge_json(domain_file, domain_folder, domain_file_basename):
+    '''Merges all json files on the Domain Folder'''
 
-    # Merges all json files on the Domain Folder
-
-    json_path = os.path.join(
+    final_json = os.path.join(
         domain_folder, domain_file_basename[:-4] + '.json')
 
-    if os.path.exists(json_path):
+    if os.path.exists(final_json):
 
-        os.remove(json_path)
+        os.remove(final_json)
 
-    for f in os.listdir(domain_folder):
+    for pattern_json in os.listdir(domain_folder):
 
-        if f.endswith('.json') and f != os.path.basename(json_path):
+        if pattern_json.endswith('.json') and pattern_json != os.path.basename(final_json):
 
-            with open(os.path.join(domain_folder, f), 'r') as infile,\
-                    open(json_path, 'a') as outfile:
+            with open(os.path.join(domain_folder, pattern_json), 'r') as infile,\
+                    open(final_json, 'a') as outfile:
 
-                logging.debug(f'Writing {f} into merged json')
+                logging.debug(f'Writing {pattern_json} into merged json')
 
                 for line in infile:
 
@@ -112,10 +108,15 @@ def merge_json(domain_file, domain_folder, domain_file_basename):
 
                 infile.close()
 
-                os.remove(os.path.join(domain_folder, f))
+                os.remove(os.path.join(domain_folder, pattern_json))
+
+
+def break_domain_path(domain_file):
+    return os.path.dirname(domain_file), os.path.basename(domain_file)
 
 
 def valid_pattern_file(pattern_file):
+    '''Checks is file is a CSV'''
     return pattern_file.endswith('.csv')
 
 
@@ -131,6 +132,8 @@ if __name__ == "__main__":
     # Iterates through all files on the Domain File list
     for domain_file in domain_list:
 
+        domain_folder, domain_file_basename = break_domain_path(domain_file)
+
         domain_file_basename = os.path.basename(domain_file)
         domain_folder = os.path.dirname(domain_file)
 
@@ -144,7 +147,6 @@ if __name__ == "__main__":
         # Lists all files on the Pattern Folder and iterates through them
         for pattern_file in os.listdir(pattern_folder):
 
-            # Checks is file is a CSV
             if valid_pattern_file(pattern_file):
 
                 pattern = os.path.basename(pattern_file)[:-4]
