@@ -20,7 +20,8 @@ pattern_folder = r'.\Patterns'
 # This is the lenght of the strings filtered on the Domain file since our largest pattern has 5 characthers the length is 5 + .org.(Or net or com) so it adds up to 10
 length = 10
 
-def ChunkProcessing(chunk):
+
+def chunk_processing(chunk):
 
     # Processes chunks of the Domain file so as to reduce memory usage
 
@@ -35,7 +36,7 @@ def ChunkProcessing(chunk):
     return chunk
 
 
-def CleanDomainDf(domain_file):
+def clean_domain_df(domain_file, domain_file_basename, domain_folder):
 
     # This function cleans the domain file, saving a CSV and returning a dataframe.
 
@@ -43,20 +44,20 @@ def CleanDomainDf(domain_file):
 
     for chunk in pd.read_csv(domain_file, sep='\t', usecols=[0], dtype='category', chunksize=200000, squeeze=True):
 
-        chunk = ChunkProcessing(chunk)
+        chunk = chunk_processing(chunk)
 
         domain_df = pd.concat([domain_df, chunk], ignore_index=True, axis=0)
 
     domain_df.drop_duplicates(inplace=True)
 
     # Saves results to CSV
-    domain_df.to_csv(f'{os.path.dirname(domain_file)}\Cleaned_{os.path.basename(domain_file)}',
-                    index=False)
+    domain_df.to_csv(f'{domain_folder}\Cleaned_{domain_file_basename}',
+                     index=False)
 
     return domain_df
 
 
-def GetNonMatchPatterns(domain_df, pattern_file):
+def get_non_matches(domain_df, pattern_file):
 
     # This Function returns a Dataframes with all unmatched elements in the Pattern file
 
@@ -78,13 +79,12 @@ def GetNonMatchPatterns(domain_df, pattern_file):
     return pattern_df
 
 
-def MergeJson(domain_file):
+def merge_json(domain_file, domain_folder, domain_file_basename):
 
     # Merges all json files on the Domain Folder
 
-    domain_folder = os.path.dirname(domain_file)
-    domain_f = os.path.basename(domain_file)
-    json_path = os.path.join(domain_folder, domain_f[:-4] + '.json')
+    json_path = os.path.join(
+        domain_folder, domain_file_basename[:-4] + '.json')
 
     if os.path.exists(json_path):
 
@@ -115,45 +115,54 @@ def MergeJson(domain_file):
                 os.remove(os.path.join(domain_folder, f))
 
 
+def valid_pattern_file(pattern_file):
+    return pattern_file.endswith('.csv')
+
+
 if __name__ == "__main__":
 
     # Creates log file and shows logs on console as well
-    logging.basicConfig(format='%(asctime)s %(message)s', 
+    logging.basicConfig(format='%(asctime)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M',
                         level=logging.DEBUG,
-                        handlers=[logging.FileHandler('BigData.log'), 
-                                logging.StreamHandler()])
+                        handlers=[logging.FileHandler('BigData.log'),
+                                  logging.StreamHandler()])
 
     # Iterates through all files on the Domain File list
     for domain_file in domain_list:
 
-        logging.debug(f'Cleaning {os.path.basename(domain_file)} ...')
+        domain_file_basename = os.path.basename(domain_file)
+        domain_folder = os.path.dirname(domain_file)
 
-        domain_df = CleanDomainDf(domain_file)
+        logging.debug(f'Cleaning {domain_file_basename} ...')
 
-        logging.debug(f'{os.path.basename(domain_file)} Cleaned!!!')
+        domain_df = clean_domain_df(
+            domain_file, domain_file_basename, domain_folder)
+
+        logging.debug(f'{domain_file_basename} Cleaned!!!')
 
         # Lists all files on the Pattern Folder and iterates through them
         for pattern_file in os.listdir(pattern_folder):
 
             # Checks is file is a CSV
-            if pattern_file.endswith('.csv'):
+            if valid_pattern_file(pattern_file):
 
                 pattern = os.path.basename(pattern_file)[:-4]
 
                 logging.debug(f'Looking for non matches in {pattern} file...')
 
-                pattern_df = GetNonMatchPatterns(domain_df, os.path.join(pattern_folder, pattern_file))
+                pattern_df = get_non_matches(
+                    domain_df, os.path.join(pattern_folder, pattern_file))
 
                 pattern_df.columns = [f'{pattern}']
 
                 logging.debug(f'Matching for {pattern} file finished')
 
-                with open(f'{os.path.dirname(domain_file)}\{pattern_file[:-4]}.json', 'w') as f:
+                with open(f'{domain_folder}\{pattern_file[:-4]}.json', 'w') as f:
                     json.dump(pattern_df.to_dict(orient='list'), f)
 
             else:
 
                 logging.debug(f'File {pattern_file} is not a CSV!!')
 
-        MergeJson(domain_file)
+        merge_json(domain_file)
