@@ -16,7 +16,7 @@ def pattern():
 
 def test_clean_domain_df(domain):
 
-    domain.clean_domain_df()
+    domain.clean_df()
 
     golden_file = pd.read_csv(
         r'.\Domains\Golden Files\Cleaned_gold_org.txt', usecols=[0], dtype='category')

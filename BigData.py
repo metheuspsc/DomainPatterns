@@ -23,11 +23,11 @@ if __name__ == "__main__":
 
         domain = Domain(domain_path)
 
-        domain_df = clean_domain_df(domain)
+        domain.df = domain.clean_df()
 
-        for pattern_path in os.listdir(pattern_folder):
+        for pattern in os.listdir(pattern_folder):
 
-            pattern = Pattern(pattern_path)
+            pattern = Pattern(os.path.join(pattern_folder, pattern))
 
             if pattern.path_isvalid():
 
@@ -36,4 +36,4 @@ if __name__ == "__main__":
 
                 create_json(domain, pattern)
 
-        merge_json(domain)
+        domain.merge()
