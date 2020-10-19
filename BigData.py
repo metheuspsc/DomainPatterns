@@ -17,8 +17,6 @@ domain_list = [org_file]
 
 pattern_folder = r'.\Patterns'
 
-length = 10
-
 if __name__ == "__main__":
 
     for domain_path in domain_list:
@@ -31,11 +29,11 @@ if __name__ == "__main__":
 
             pattern = Pattern(pattern_path)
 
-            if pattern.isvalid:
+            if pattern.path_isvalid():
 
                 pattern_df = get_non_matches(
-                    domain_df, os.path.join(pattern_folder, pattern_path))
+                    domain, pattern)
 
-                create_json(domain, pattern_path, pattern_df)
+                create_json(domain, pattern)
 
         merge_json(domain)
