@@ -1,7 +1,7 @@
 import os
 import logging
 import json
-from functions import *
+from functions import Domain, Pattern, get_non_matches, create_json
 
 logging.basicConfig(format='%(asctime)s %(message)s',
                     datefmt='%Y-%m-%d %H:%M',
