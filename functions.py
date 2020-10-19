@@ -6,9 +6,13 @@ import pandas as pd
 
 
 def chunk_processing(chunk):
+
     chunk.drop_duplicates(inplace=True)
+
     chunk = chunk[chunk.str.len() <= length]
+
     chunk = chunk.str[:-5]
+
     return chunk
 
 
@@ -25,14 +29,14 @@ def chunk_match(chunk):
     return chunk
 
 
-def clean_domain_df(domain_file_path, domain_file_basename, domain_folder):
+def clean_domain_df(domain_path, domain_basename, domain_folder):
     '''This function cleans the domain file, saving a CSV and returning a dataframe.'''
 
-    logging.debug(f'Cleaning {domain_file_basename} ...')
+    logging.debug(f'Cleaning {domain_basename} ...')
 
     domain_df = pd.DataFrame()
 
-    for chunk in pd.read_csv(domain_file_path, sep='\t', usecols=[0], dtype='category', chunksize=200000, squeeze=True):
+    for chunk in pd.read_csv(domain_path, sep='\t', usecols=[0], dtype='category', chunksize=200000, squeeze=True):
 
         chunk = chunk_processing(chunk)
 
@@ -40,10 +44,10 @@ def clean_domain_df(domain_file_path, domain_file_basename, domain_folder):
 
     domain_df.drop_duplicates(inplace=True)
 
-    domain_df.to_csv(f'{domain_folder}\Cleaned_{domain_file_basename}',
+    domain_df.to_csv(f'{domain_folder}\Cleaned_{domain_basename}',
                      index=False)
 
-    logging.debug(f'{domain_file_basename} Cleaned!!!')
+    logging.debug(f'{domain_basename} Cleaned!!!')
 
     return domain_df
 
@@ -75,11 +79,10 @@ def create_json(domain_folder, pattern_file, pattern_df):
         json.dump(pattern_df.to_dict(orient='list'), f)
 
 
-def merge_json(domain_folder, domain_file_basename):
+def merge_json(domain_folder, domain_basename):
     '''Merges all json files on the Domain Folder'''
-
     final_json = os.path.join(
-        domain_folder, domain_file_basename[:-4] + '.json')
+        domain_folder, domain_basename[:-4] + '.json')
 
     if os.path.exists(final_json):
 
@@ -110,8 +113,8 @@ def merge_json(domain_folder, domain_file_basename):
                 os.remove(os.path.join(domain_folder, pattern_json))
 
 
-def break_domain_path(domain_file_path):
-    return os.path.dirname(domain_file_path), os.path.basename(domain_file_path)
+def break_domain_path(domain_path):
+    return os.path.dirname(domain_path), os.path.basename(domain_path)
 
 
 def pattern_file_isvalid(pattern_file):
