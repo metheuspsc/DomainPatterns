@@ -5,6 +5,26 @@ import json
 import pandas as pd
 
 
+class Domain:
+    def __init__(self, path):
+        self.path = path
+        self.folder = os.path.dirname(self.path)
+        self.basename = os.path.basename(self.path)
+
+
+class Pattern:
+    def __init__(self, path):
+        self.path = path
+        self.isvalid = pattern_file_isvalid(self.path)
+
+    def pattern_file_isvalid(pattern_file):
+        '''Checks is file is a CSV'''
+        valid = self.path.endswith('.csv')
+        if not valid:
+            logging.debug(f'File {self.path} is not a CSV!!')
+        return valid
+
+
 def chunk_processing(chunk):
 
     chunk.drop_duplicates(inplace=True)
@@ -29,14 +49,14 @@ def chunk_match(chunk):
     return chunk
 
 
-def clean_domain_df(domain_path, domain_basename, domain_folder):
+def clean_domain_df(domain):
     '''This function cleans the domain file, saving a CSV and returning a dataframe.'''
 
-    logging.debug(f'Cleaning {domain_basename} ...')
+    logging.debug(f'Cleaning {domain.basename} ...')
 
     domain_df = pd.DataFrame()
 
-    for chunk in pd.read_csv(domain_path, sep='\t', usecols=[0], dtype='category', chunksize=200000, squeeze=True):
+    for chunk in pd.read_csv(domain.path, sep='\t', usecols=[0], dtype='category', chunksize=200000, squeeze=True):
 
         chunk = chunk_processing(chunk)
 
@@ -44,10 +64,10 @@ def clean_domain_df(domain_path, domain_basename, domain_folder):
 
     domain_df.drop_duplicates(inplace=True)
 
-    domain_df.to_csv(f'{domain_folder}\Cleaned_{domain_basename}',
+    domain_df.to_csv(f'{domain.folder}\Cleaned_{domain.basename}',
                      index=False)
 
-    logging.debug(f'{domain_basename} Cleaned!!!')
+    logging.debug(f'{domain.basename} Cleaned!!!')
 
     return domain_df
 
@@ -74,25 +94,25 @@ def get_non_matches(domain_df, pattern_file):
     return pattern_df
 
 
-def create_json(domain_folder, pattern_file, pattern_df):
-    with open(f'{domain_folder}\{pattern_file[:-4]}.json', 'w') as f:
+def create_json(domain.folder, pattern_file, pattern_df):
+    with open(f'{domain.folder}\{pattern_file[:-4]}.json', 'w') as f:
         json.dump(pattern_df.to_dict(orient='list'), f)
 
 
-def merge_json(domain_folder, domain_basename):
+def merge_json(domain):
     '''Merges all json files on the Domain Folder'''
     final_json = os.path.join(
-        domain_folder, domain_basename[:-4] + '.json')
+        domain.folder, domain.basename[:-4] + '.json')
 
     if os.path.exists(final_json):
 
         os.remove(final_json)
 
-    for pattern_json in os.listdir(domain_folder):
+    for pattern_json in os.listdir(domain.folder):
 
         if pattern_json.endswith('.json') and pattern_json != os.path.basename(final_json):
 
-            with open(os.path.join(domain_folder, pattern_json), 'r') as infile,\
+            with open(os.path.join(domain.folder, pattern_json), 'r') as infile,\
                     open(final_json, 'a') as outfile:
 
                 logging.debug(f'Writing {pattern_json} into merged json')
@@ -110,16 +130,4 @@ def merge_json(domain_folder, domain_basename):
 
                 infile.close()
 
-                os.remove(os.path.join(domain_folder, pattern_json))
-
-
-def break_domain_path(domain_path):
-    return os.path.dirname(domain_path), os.path.basename(domain_path)
-
-
-def pattern_file_isvalid(pattern_file):
-    '''Checks is file is a CSV'''
-    valid = pattern_file.endswith('.csv')
-    if not valid:
-        logging.debug(f'File {pattern_file} is not a CSV!!')
-    return valid
+                os.remove(os.path.join(domain.folder, pattern_json))

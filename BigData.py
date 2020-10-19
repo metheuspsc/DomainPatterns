@@ -21,21 +21,21 @@ length = 10
 
 if __name__ == "__main__":
 
-    for domain_file_path in domain_list:
+    for domain_path in domain_list:
 
-        domain_folder, domain_file_basename = break_domain_path(
-            domain_file_path)
+        domain = Domain(domain_path)
 
-        domain_df = clean_domain_df(
-            domain_file_path, domain_file_basename, domain_folder)
+        domain_df = clean_domain_df(domain)
 
-        for pattern_file in os.listdir(pattern_folder):
+        for pattern_path in os.listdir(pattern_folder):
 
-            if pattern_file_isvalid(pattern_file):
+            pattern = Pattern(pattern_path)
+
+            if pattern.isvalid:
 
                 pattern_df = get_non_matches(
-                    domain_df, os.path.join(pattern_folder, pattern_file))
+                    domain_df, os.path.join(pattern_folder, pattern_path))
 
-                create_json(domain_folder, pattern_file, pattern_df)
+                create_json(domain, pattern_path, pattern_df)
 
-        merge_json(domain_folder, domain_file_basename)
+        merge_json(domain)
